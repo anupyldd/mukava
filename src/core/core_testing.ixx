@@ -104,6 +104,43 @@ namespace detail
                         && True(AlmostEqual(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()))
                         && False(AlmostEqual(std::numeric_limits<float>::infinity(), 1e30f))
                         && False(AlmostEqual(std::nanf(""), std::nanf("")));
+                    }),
+
+                    Test("Overlap")
+                    .Func([]
+                    {
+                        return Report{}
+                        && True(Overlap(0, 10, 5, 15))
+                        && True(Overlap(0, 10, 10, 20))
+                        && False(Overlap(0, 10, 11, 20))
+                        && True(Overlap(5, 10, 0, 15))
+                        && False(Overlap(-5, -1, -10, -6))
+                        && True(Overlap(-5, 5, 4, 6));
+                    }),
+
+                    Test("ScalingFactor")
+                    .Func([]
+                    {
+                        return Report{}
+                        && Equal(ScalingFactor(0.0), 1.0)
+                        && Equal(ScalingFactor(0.5), 1.5)
+                        && Equal(ScalingFactor(-0.5), (1 / (1 - (-0.5))))
+                        && Equal(ScalingFactor(1.0), 2.0)
+                        && Equal(ScalingFactor(-0.75), (1 / 1.75))
+                        && Equal(ScalingFactor(10.0), 11.0)
+                        && Equal(ScalingFactor(-0.9999), (1 / 1.9999))
+                        && Equal(ScalingFactor(-1.0), 0.5);
+                    }),
+
+                    Test("LinearValue")
+                    .Func([]
+                    {
+                        return Report{}
+                        && Equal(LinearValue(1.0), 0.0)
+                        && Equal(LinearValue(1.5), 0.5)
+                        && Equal(LinearValue(2.0), 1.0)
+                        && Equal(LinearValue(0.5), -1.0)
+                        && Equal(LinearValue(11.0), 10.0);
                     })
                 );
     }

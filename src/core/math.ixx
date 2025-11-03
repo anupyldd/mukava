@@ -3,6 +3,7 @@ module;
 #include <type_traits>
 #include <algorithm>
 #include <cmath>
+#include <cassert>
 
 export module math;
 
@@ -34,4 +35,31 @@ export namespace math
         const auto norm = std::min({std::abs(a + b), std::numeric_limits<T>::max()});
         return diff < std::max(absTh, epsilon * norm);
     }
+
+    // returns true if ranges 'a' and 'b' overlap
+    template<types::Number T>
+    [[nodiscard]]
+    constexpr auto Overlap(T aMin, T aMax, T bMin, T bMax) -> bool
+    {
+        assert(aMin <= aMax && "Invalid range: aMin > aMax");
+        assert(bMin <= bMax && "Invalid range: bMin > bMax");
+        return aMin <= bMax && aMax >= bMin;
+    }
+
+    // returns scaling factor from linear value
+    template<types::FloatingPoint T>
+    [[nodiscard]]
+    constexpr auto ScalingFactor(T linValue) -> std::conditional_t<std::same_as<T, double>, double, float>
+    {
+        return (linValue >= 0) ? ( 1 + linValue) : (1 / (1 - linValue));
+    }
+
+    // returns linear value from scaling factor
+    template<types::FloatingPoint T>
+    [[nodiscard]]
+    constexpr auto LinearValue(T scaleFactor) -> std::conditional_t<std::same_as<T, double>, double, float>
+    {
+        return (scaleFactor >= 1) ? (scaleFactor - 1) : ( 1 - (1 / scaleFactor));
+    }
+
 }
