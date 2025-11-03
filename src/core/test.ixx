@@ -90,7 +90,7 @@ export namespace test
 
     private:
         std::vector<std::string> messages;
-        bool success = false;
+        bool success = true;
     };
 
     class Test
@@ -182,7 +182,8 @@ export namespace test
         auto Run() -> void
         {
             int total  = 0,
-                failed = 0;
+                failed = 0,
+                errors = 0;
             std::vector<std::string> fails;
 
             for (auto& suite : suites)
@@ -209,25 +210,28 @@ export namespace test
                     {
                         std::println("[! ERROR] Test '{}': Setup function has thrown an unhandled exception '{}'",
                             testName, e.what());
+                        ++errors;
                         continue;
                     }
                     catch (...)
                     {
                         std::println("[! ERROR] Test '{}': Setup function has thrown an unknown unhandled exception",
                             testName);
+                        ++errors;
                         continue;
                     }
 
                     // test ----------
                     try
                     {
-                        if (auto rep = test.test())
+                        auto rep = test.test();
+                        if (rep)
                         {
                             std::println("[   PASS] {}", testName);
                         }
                         else
                         {
-                            std::println("[X  FAIL] {} :\n{}", testName, rep.Format());
+                            std::println("[X  FAIL] {}:\n{}", testName, rep.Format());
                             ++failed;
                             fails.push_back(testName);
                         }
@@ -236,12 +240,14 @@ export namespace test
                     {
                         std::println("[! ERROR] Test '{}': Test function has thrown an unhandled exception '{}'",
                             testName, e.what());
+                        ++errors;
                         continue;
                     }
                     catch (...)
                     {
-                        std::println("[! ERROR] Test '{}': Test function has thrown an unknown unhandled exception '{}'",
+                        std::println("[! ERROR] Test '{}': Test function has thrown an unknown unhandled exception",
                             testName);
+                        ++errors;
                         continue;
                     }
 
@@ -254,12 +260,14 @@ export namespace test
                     {
                         std::println("[! ERROR] Test '{}': Teardown function has thrown an unhandled exception '{}'",
                             testName, e.what());
+                        ++errors;
                         continue;
                     }
                     catch (...)
                     {
                         std::println("[! ERROR] Test '{}': Teardown function has thrown an unknown unhandled exception",
                             testName);
+                        ++errors;
                         continue;
                     }
 
@@ -270,8 +278,8 @@ export namespace test
                 if (suite.teardown) suite.teardown();
             }
 
-            std::println("[SUMMARY] Total: {}; Succeeded: {}; Failed: {}",
-                total, total - failed, failed);
+            std::println("[SUMMARY] Total: {}; Succeeded: {}; Failed: {}; Errors: {}",
+                total, total - failed, failed, errors);
 
             if (failed > 0)
             {
