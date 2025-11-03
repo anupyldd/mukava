@@ -13,6 +13,7 @@ target_sources(${LIB_NAME}
         src/core/math.ixx
         src/core/types.ixx
         src/core/test.ixx
+        src/core/core_testing.ixx
 )
 
 add_executable(${PROJECT_NAME} src/main.cpp)

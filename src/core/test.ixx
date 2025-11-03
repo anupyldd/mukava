@@ -50,7 +50,7 @@ export namespace test
                 std::move(type), loc.file_name(), loc.line());
         }
 
-        operator bool() const
+        constexpr operator bool() const
         {
             return success;
         }
@@ -79,6 +79,7 @@ export namespace test
             return success;
         }
 
+        [[nodiscard]]
         std::string Format() const
         {
             std::stringstream sstr;
@@ -195,27 +196,76 @@ export namespace test
 
                     if (!test.test)
                     {
-                        std::println("[! ERROR] Test '{}' is missing the test function", testName);
+                        std::println("[! ERROR] Test '{}': missing the test function", testName);
                         continue;
                     }
 
-                    if (test.setup) test.setup();
-
-                    if (auto rep = test.test())
+                    // setup ----------
+                    try
                     {
-                        std::println("[   PASS] {}", testName);
+                        if (test.setup) test.setup();
                     }
-                    else
+                    catch (const std::exception& e)
                     {
-                        std::println("[X  FAIL] {} :\n{}", testName, rep.Format());
-                        ++failed;
-                        fails.push_back(testName);
+                        std::println("[! ERROR] Test '{}': Setup function has thrown an unhandled exception '{}'",
+                            testName, e.what());
+                        continue;
+                    }
+                    catch (...)
+                    {
+                        std::println("[! ERROR] Test '{}': Setup function has thrown an unknown unhandled exception",
+                            testName);
+                        continue;
                     }
 
-                    if (test.teardown) test.teardown();
+                    // test ----------
+                    try
+                    {
+                        if (auto rep = test.test())
+                        {
+                            std::println("[   PASS] {}", testName);
+                        }
+                        else
+                        {
+                            std::println("[X  FAIL] {} :\n{}", testName, rep.Format());
+                            ++failed;
+                            fails.push_back(testName);
+                        }
+                    }
+                    catch (const std::exception& e)
+                    {
+                        std::println("[! ERROR] Test '{}': Test function has thrown an unhandled exception '{}'",
+                            testName, e.what());
+                        continue;
+                    }
+                    catch (...)
+                    {
+                        std::println("[! ERROR] Test '{}': Test function has thrown an unknown unhandled exception '{}'",
+                            testName);
+                        continue;
+                    }
+
+                    // teardown ----------
+                    try
+                    {
+                        if (test.teardown) test.teardown();
+                    }
+                    catch (const std::exception& e)
+                    {
+                        std::println("[! ERROR] Test '{}': Teardown function has thrown an unhandled exception '{}'",
+                            testName, e.what());
+                        continue;
+                    }
+                    catch (...)
+                    {
+                        std::println("[! ERROR] Test '{}': Teardown function has thrown an unknown unhandled exception",
+                            testName);
+                        continue;
+                    }
 
                     ++total;
                 }
+
 
                 if (suite.teardown) suite.teardown();
             }
@@ -236,58 +286,114 @@ export namespace test
     };
 }
 
-export namespace test
+namespace detail
 {
-    // returns true if actual value is equal to expected value.
-    // for floats uses AlmostEqual function
     template<typename T>
     [[nodiscard]]
-    constexpr auto Equal(T actual, T expected, SRC_LOC_CURR) -> Result
+    constexpr auto EqualImpl(const T& actual, const T& expected) -> bool
     {
-        // floating point numbers are to be checked separately
         if constexpr (types::FloatingPoint<T>)
-        {
-            if (math::AlmostEqual<T>(actual, expected))
-                return SUCCESS;
-            else
-                return FAILURE(Equal);
-        }
-
-        if (actual == expected)
-            return SUCCESS;
-        else
-            return FAILURE(Equal);
+            return math::AlmostEqual<T>(actual, expected);
+        return (actual == expected);
     }
 
-    // returns true if passed F (function, functor, lambda) throws any exception
+    template<typename F, typename Tuple = std::tuple<>>
+    [[nodiscard]]
+    constexpr auto ThrowsImpl(F&& func, Tuple&& argsTuple = {}) -> bool
+    {
+        try
+        {
+            std::apply(std::forward<F>(func), std::forward<Tuple>(argsTuple));
+            return false;
+        }
+        catch (...)
+        {
+            return true;
+        }
+    }
+
+    template<typename T>
+    [[nodiscard]]
+    constexpr auto NullImpl(T val) -> bool
+    {
+        return static_cast<bool>(!val);
+    }
+
+    template<typename T>
+    [[nodiscard]]
+    constexpr auto True(T val) -> bool
+    {
+        return val;
+    }
+}
+
+export namespace test
+{
+    // succeeds if actual value is equal to the expected value.
+    // for floats/doubles uses math::AlmostEqual function
+    template<typename T>
+    [[nodiscard]]
+    constexpr auto Equal(const T& actual, const T& expected, SRC_LOC_CURR) -> Result
+    {
+        return detail::EqualImpl(actual, expected) ? SUCCESS : FAILURE(Equal);
+    }
+
+    // succeeds if actual value is NOT equal to the expected value.
+    // for floats/doubles uses math::AlmostEqual function
+    template<typename T>
+    [[nodiscard]]
+    constexpr auto NotEqual(const T& actual, const T& expected, SRC_LOC_CURR) -> Result
+    {
+        return detail::EqualImpl(actual, expected) ? FAILURE(NotEqual) : SUCCESS;
+    }
+
+    // succeeds if passed F (function, functor, lambda) throws any exception
     template<typename F, typename Tuple = std::tuple<>>
     [[nodiscard]]
     constexpr auto Throws(F&& func, Tuple&& argsTuple = {}, SRC_LOC_CURR) -> Result
     {
-        try
-        {
-            std::apply(std::forward<F>(func), std::forward<Tuple>(argsTuple));
-            return FAILURE(Throws);
-        }
-        catch (...)
-        {
-            return SUCCESS;
-        }
+        return detail::ThrowsImpl(std::forward<F>(func), std::forward<Tuple>(argsTuple)) ?
+            SUCCESS : FAILURE(Throws);
     }
 
-    // returns true if passed F (function / functor / lambda / ...) does not throw any exception
+    // succeeds if passed F (function / functor / lambda / ...) does not throw any exception
     template<typename F, typename Tuple = std::tuple<>>
     [[nodiscard]]
     constexpr auto DoesNotThrow(F&& func, Tuple&& argsTuple = {}, SRC_LOC_CURR) -> Result
     {
-        try
-        {
-            std::apply(std::forward<F>(func), std::forward<Tuple>(argsTuple));
-            return SUCCESS;
-        }
-        catch (...)
-        {
-            return FAILURE(DoesNotThrow);
-        }
+        return detail::ThrowsImpl(std::forward<F>(func), std::forward<Tuple>(argsTuple)) ?
+            FAILURE(DoesNotThrow) : SUCCESS;
+    }
+
+    // succeeds if val is null
+    template<typename T>
+    [[nodiscard]]
+    constexpr auto Null(T val, SRC_LOC_CURR) -> Result
+    {
+        return detail::NullImpl(val) ? SUCCESS : FAILURE(Null);
+    }
+
+    // succeeds if val is NOT null
+    template<typename T>
+    [[nodiscard]]
+    constexpr auto NotNull(T val, SRC_LOC_CURR) -> Result
+    {
+        return detail::NullImpl(val) ? FAILURE(NotNull) : SUCCESS;
+    }
+
+    // succeeds if val is true
+    template<typename T>
+    [[nodiscard]]
+    constexpr auto True(T val, SRC_LOC_CURR) -> Result
+    {
+        return detail::True(val) ? SUCCESS : FAILURE(True);
+    }
+
+    // succeeds if val is NOT true
+    template<typename T>
+    [[nodiscard]]
+    constexpr auto False(T val, SRC_LOC_CURR) -> Result
+    {
+        return detail::True(val) ? FAILURE(False) : SUCCESS;
     }
 }
