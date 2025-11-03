@@ -173,6 +173,138 @@ namespace detail
                         && Equal(Average({1.5f, 2.5f, 3.5f}), 2.5f)
                         && Equal(Average({1e9, 2e9, 3e9}), 2e9)
                         && Equal(Average({1e300, 1e300, 1e300}), 1e300);
+                    }),
+
+                    Test("Vector2")
+                    .Func([]
+                    {
+                        Report rep;
+
+                        // constructors
+                        {
+                            const Vector2i v1;
+                            rep && Equal(v1.x, 0)
+                                && Equal(v1.y, 0);
+
+                            const Vector2f v2(1.0f, 2.0f);
+                            rep && Equal(v2.x, 1.0f)
+                                && Equal(v2.y, 2.0f);
+
+                            const Vector2d v3(1.0);
+                            rep && Equal(v3.x, 1.0)
+                                && Equal(v3.y, 1.0);
+
+                            const Vector2i v4(v1);
+                            rep && Equal(v4.x, v1.x)
+                                && Equal(v4.y, v1.y);
+                        }
+
+                        // set, zero
+                        {
+                            Vector2i v1;
+
+                            v1.Set(1, 2);
+                            rep && Equal(v1.x, 1)
+                                && Equal(v1.y, 2);
+
+                            v1.Set(4);
+                            rep && Equal(v1.x, 4)
+                                && Equal(v1.y, 4);
+
+                            v1.Zero();
+                            rep && Equal(v1.x, 0)
+                                && Equal(v1.y, 0);
+                        }
+
+                        // magnitude and normalization
+                        {
+                            Vector2d v1{3.0, 4.0};
+                            rep && Equal(v1.MagnitudeSq(), 25.0)
+                                && Equal(v1.Magnitude(), 5.0);
+
+                            v1.Normalize();
+                            rep && Equal(v1.x, 0.6)
+                                && Equal(v1.y, 0.8)
+                                && Equal(v1.Magnitude(), 1.0);
+
+                            Vector2f v2{1.0f, 0.0f};
+                            rep && Equal(v2.MagnitudeSq(), 1.0f)
+                                && Equal(v2.Magnitude(), 1.0f);
+
+                            v2.Normalize();
+                            rep && Equal(v2.x, 1.0f)
+                                && Equal(v2.y, 0.0f)
+                                && Equal(v2.Magnitude(), 1.0f);
+
+                            Vector2d v3{0.0, 0.0};
+                            rep && Equal(v3.MagnitudeSq(), 0.0)
+                                && Equal(v3.Magnitude(), 0.0);
+
+                            v2.Normalize();
+                            rep && Equal(v3.x, 0.0)
+                                && Equal(v3.y, 0.0);
+                        }
+
+                        // yx
+                        {
+                            const Vector2i v1{1, 2};
+                            const auto v2 = v1.YX();
+                            rep && Equal(v2.x, 2)
+                                && Equal(v2.y, 1);
+                        }
+
+                        // any, min, max, diff
+                        {
+                            const Vector2i v1{0, 0};
+                            rep && False(v1.Any())
+                                && Equal(v1.Min(), 0)
+                                && Equal(v1.Max(), 0)
+                                && False(v1.Different());
+
+                            const Vector2i v2{1, 0};
+                            rep && True(v2.Any())
+                                && Equal(v2.Min(), 0)
+                                && Equal(v2.Max(), 1)
+                                && True(v2.Different());
+
+                            const Vector2i v3{1, 1};
+                            rep && True(v3.Any())
+                                && Equal(v3.Min(), 1)
+                                && Equal(v3.Max(), 1)
+                                && False(v3.Different());
+
+                            const Vector2i v4{-1, 1};
+                            rep && True(v4.Any())
+                                && Equal(v4.Min(), -1)
+                                && Equal(v4.Max(),  1)
+                                && True(v4.Different());
+                        }
+
+                        // average
+                        {
+                            const Vector2f v1{2.0f, 4.0f};
+                            rep && Equal(v1.Average(), 3.0f);
+
+                            const Vector2i v2{-2, 2};
+                            rep && Equal(v2.Average(), 0.0f);
+                        }
+
+                        // dot
+                        {
+                            const Vector2f v1{1.0f, 0.0f};
+                            rep && Equal(v1.Dot(Vector2f{0.0f, 1.0f}), 0.0f);
+
+                            const Vector2i v2{1, 2};
+                            rep && Equal(v2.Dot(Vector2i{2, 3}), 8.0f);
+
+                            const Vector2i v3{3, 4};
+                            rep && Equal(v3.Dot(Vector2i{3, 4}), 25.0f);
+
+                            const Vector2i v4{-1, 1};
+                            rep && Equal(v4.Dot(Vector2i{1, 1}), 0.0f);
+                        }
+
+                        return rep;
                     })
                 );
 
