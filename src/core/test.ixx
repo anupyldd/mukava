@@ -90,7 +90,7 @@ export namespace test
 
     private:
         std::vector<std::string> messages;
-        bool success = false;
+        bool success = true;
     };
 
     class Test
@@ -221,13 +221,14 @@ export namespace test
                     // test ----------
                     try
                     {
-                        if (auto rep = test.test())
+                        auto rep = test.test();
+                        if (rep)
                         {
                             std::println("[   PASS] {}", testName);
                         }
                         else
                         {
-                            std::println("[X  FAIL] {} :\n{}", testName, rep.Format());
+                            std::println("[X  FAIL] {}:\n{}", testName, rep.Format());
                             ++failed;
                             fails.push_back(testName);
                         }
@@ -240,7 +241,7 @@ export namespace test
                     }
                     catch (...)
                     {
-                        std::println("[! ERROR] Test '{}': Test function has thrown an unknown unhandled exception '{}'",
+                        std::println("[! ERROR] Test '{}': Test function has thrown an unknown unhandled exception",
                             testName);
                         continue;
                     }
