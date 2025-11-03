@@ -1,5 +1,6 @@
 module;
 
+#include <concepts>
 #include <type_traits>
 
 export module types;
@@ -25,5 +26,6 @@ export namespace types
     template<typename T>
     concept Number = Integer<T> || FloatingPoint<T>;
 
-
+    template<Number T>
+    using FloatOrDouble = std::conditional_t<std::same_as<T, double>, double, float>;
 }
