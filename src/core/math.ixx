@@ -68,7 +68,7 @@ export namespace math
     [[nodiscard]]
     constexpr auto Average(T a, T b) -> types::FloatOrDouble<T>
     {
-        return static_cast<types::FloatOrDouble<T>>((a + b) / 2);
+        return static_cast<types::FloatOrDouble<T>>(a + b) / static_cast<types::FloatOrDouble<T>>(2);
     }
 
     // find average of three numbers
@@ -76,7 +76,7 @@ export namespace math
     [[nodiscard]]
     constexpr auto Average(T a, T b, T c) -> types::FloatOrDouble<T>
     {
-        return static_cast<types::FloatOrDouble<T>>((a + b + c) / 3);
+        return static_cast<types::FloatOrDouble<T>>(a + b + c) / static_cast<types::FloatOrDouble<T>>(3);
     }
 
     // find average value from a list
@@ -84,6 +84,7 @@ export namespace math
     [[nodiscard]]
     constexpr auto Average(std::initializer_list<T> vals) -> types::FloatOrDouble<T>
     {
+        assert(!(vals.size() == 0) && "Empty list leads to division by zero");
         return static_cast<types::FloatOrDouble<T>>(
             std::accumulate(vals.begin(), vals.end(), 0.0) / vals.size());
     }
@@ -157,6 +158,5 @@ export namespace math
         // returns true if x and y are different
         [[nodiscard]]
         auto Different() -> bool { return x != y; }
-
     };
 }

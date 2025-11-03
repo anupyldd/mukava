@@ -141,8 +141,42 @@ namespace detail
                         && Equal(LinearValue(2.0), 1.0)
                         && Equal(LinearValue(0.5), -1.0)
                         && Equal(LinearValue(11.0), 10.0);
+                    }),
+
+                    Test("Average")
+                    .Func([]
+                    {
+                        return Report{}
+                        // average of two
+                        && Equal(Average(2, 4), 3.0f)
+                        && Equal(Average(2.0, 4.0), 3.0)
+                        && Equal(Average(2.0f, 4.0f), 3.0f)
+                        && Equal(Average(-2, 2), 0.0f)
+                        && Equal(Average(0, 1), 0.5f)
+                        && Equal(Average(1'000'000'000, 1'000'000'002), 1'000'000'001.0f)
+                        && Equal(Average(1e30, 1e30), 1e30)
+
+                        // average of three
+                        && Equal(Average(1, 2, 3), 2.0f)
+                        && Equal(Average(1.0, 2.0, 3.0), 2.0)
+                        && Equal(Average(-3, 0, 3), 0.0f)
+                        && Equal(Average(0u, 2u, 4u), 2.0f)
+                        && Equal(Average(1.5f, 2.5f, 3.5f), 2.5f)
+                        && Equal(Average(1e12, 1e12, 1e12), 1e12)
+
+                        // average of list
+                        && Equal(Average({1, 2, 3, 4}), 2.5f)
+                        && Equal(Average({1.0, 2.0, 3.0, 4.0}), 2.5)
+                        && Equal(Average({0}), 0.0f)
+                        && Equal(Average({-1, -2, -3}), -2.0f)
+                        && Equal(Average({100, 200}), 150.0f)
+                        && Equal(Average({1.5f, 2.5f, 3.5f}), 2.5f)
+                        && Equal(Average({1e9, 2e9, 3e9}), 2e9)
+                        && Equal(Average({1e300, 1e300, 1e300}), 1e300);
                     })
                 );
+
+
     }
 }
 

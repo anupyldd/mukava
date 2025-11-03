@@ -26,6 +26,7 @@ export namespace types
     template<typename T>
     concept Number = Integer<T> || FloatingPoint<T>;
 
+    // selects double if T is double, otherwise selects float
     template<Number T>
     using FloatOrDouble = std::conditional_t<std::same_as<T, double>, double, float>;
 }
