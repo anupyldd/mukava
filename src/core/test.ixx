@@ -331,7 +331,7 @@ export namespace test
     // works for floating point numbers as well
     template<typename T>
     [[nodiscard]]
-    constexpr auto Equal(const T& actual, const T& expected, const std::source_location& loc = std::source_location::current()) -> Result
+    constexpr auto Equal(const T& actual, const T& expected, const std::source_location loc = std::source_location::current()) -> Result
     {
         const auto res = (types::Number<T>) ? math::NumericEqual(actual, expected) : (actual == expected);
         return res ? Result(true) : Result(false, std::format("Equal [{}:{}]", actual, expected), loc);
@@ -341,7 +341,7 @@ export namespace test
     // works for floating point numbers as well
     template<typename T>
     [[nodiscard]]
-    constexpr auto NotEqual(const T& actual, const T& expected, const std::source_location& loc = std::source_location::current()) -> Result
+    constexpr auto NotEqual(const T& actual, const T& expected, const std::source_location loc = std::source_location::current()) -> Result
     {
         const auto res = (types::Number<T>) ? math::NumericEqual(actual, expected) : (actual == expected);
         return res ? Result(false, std::format("NotEqual [{}:{}]", actual, expected), loc) : Result(true);
@@ -350,7 +350,7 @@ export namespace test
     // succeeds if passed F (function, functor, lambda) throws any exception
     template<typename F, typename Tuple = std::tuple<>>
     [[nodiscard]]
-    constexpr auto Throws(F&& func, Tuple&& argsTuple = {}, const std::source_location& loc = std::source_location::current()) -> Result
+    constexpr auto Throws(F&& func, Tuple&& argsTuple = {}, const std::source_location loc = std::source_location::current()) -> Result
     {
         return detail::ThrowsImpl(std::forward<F>(func), std::forward<Tuple>(argsTuple)) ?
             Result(true) : Result(false, "Throws", loc);
@@ -359,7 +359,7 @@ export namespace test
     // succeeds if passed F (function / functor / lambda / ...) does not throw any exception
     template<typename F, typename Tuple = std::tuple<>>
     [[nodiscard]]
-    constexpr auto DoesNotThrow(F&& func, Tuple&& argsTuple = {}, const std::source_location& loc = std::source_location::current()) -> Result
+    constexpr auto DoesNotThrow(F&& func, Tuple&& argsTuple = {}, const std::source_location loc = std::source_location::current()) -> Result
     {
         return detail::ThrowsImpl(std::forward<F>(func), std::forward<Tuple>(argsTuple)) ?
             Result(false, "DoesNotThrow", loc) : Result(true);
@@ -368,7 +368,7 @@ export namespace test
     // succeeds if val is null
     template<typename T>
     [[nodiscard]]
-    constexpr auto Null(T val, const std::source_location& loc = std::source_location::current()) -> Result
+    constexpr auto Null(T val, const std::source_location loc = std::source_location::current()) -> Result
     {
         return detail::NullImpl(val) ? Result(true) : Result(false, "Null", loc);
     }
@@ -376,7 +376,7 @@ export namespace test
     // succeeds if val is NOT null
     template<typename T>
     [[nodiscard]]
-    constexpr auto NotNull(T val, const std::source_location& loc = std::source_location::current()) -> Result
+    constexpr auto NotNull(T val, const std::source_location loc = std::source_location::current()) -> Result
     {
         return detail::NullImpl(val) ? Result(false, "NotNull", loc) : Result(true);
     }
@@ -384,7 +384,7 @@ export namespace test
     // succeeds if val is true
     template<typename T>
     [[nodiscard]]
-    constexpr auto True(T val, const std::source_location& loc = std::source_location::current()) -> Result
+    constexpr auto True(T val, const std::source_location loc = std::source_location::current()) -> Result
     {
         return detail::True(val) ? Result(true) : Result(false, "True", loc);
     }
@@ -392,7 +392,7 @@ export namespace test
     // succeeds if val is NOT true
     template<typename T>
     [[nodiscard]]
-    constexpr auto False(T val, const std::source_location& loc = std::source_location::current()) -> Result
+    constexpr auto False(T val, const std::source_location loc = std::source_location::current()) -> Result
     {
         return detail::True(val) ? Result(false, "False", loc) : Result(true);
     }
