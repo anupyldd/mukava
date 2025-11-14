@@ -13,6 +13,7 @@ target_sources(${LIB_NAME}
         src/core/math.ixx
         src/core/types.ixx
         src/core/test.ixx
+        src/core/misc.ixx
         src/core/core_testing.ixx
 )
 
