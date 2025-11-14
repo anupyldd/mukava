@@ -73,21 +73,6 @@ export namespace test
             return *this;
         }
 
-        //Report operator & (const Result& rhs) const
-        //{
-        //    Report rep;
-        //    rep.success = (success && rhs.success);
-        //    rep.messages = messages;
-        //    if (!rhs.success) rep.messages.push_back(rhs.message);
-        //    return rep;
-        //}
-
-        //friend Report operator & (Report&& lhs, const Result& rhs)
-        //{
-        //    lhs &= rhs;
-        //    return lhs;
-        //}
-
         operator bool () const
         {
             return success;
