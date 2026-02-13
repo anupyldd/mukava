@@ -11,11 +11,6 @@ module;
 #include <source_location>
 #include <sstream>
 
-#define SRC_LOC_CURR std::source_location loc = std::source_location::current()
-
-#define SUCCESS             Result(true)
-#define FAILURE(checkType)  Result(false, #checkType, loc)
-
 export module test;
 
 import types;
@@ -23,7 +18,7 @@ import math;
 
 namespace detail
 {
-    const char* LogIndent = "          ";
+    auto LogIndent = "          ";
 }
 
 export namespace test
@@ -36,7 +31,6 @@ export namespace test
 
     class Result
     {
-        friend Registry;
         friend Report;
 
     public:
@@ -65,13 +59,18 @@ export namespace test
         friend Registry;
 
     public:
-        Report operator && (const Result& rhs) const
+        Report& operator &= (const Result& rhs)
         {
-            Report rep;
-            rep.success = (success && rhs.success);
-            rep.messages = messages;
-            if (!rhs.success) rep.messages.push_back(rhs.message);
-            return rep;
+            success = (success && rhs.success);
+            if (!rhs.success) messages.push_back(rhs.message);
+            return *this;
+        }
+
+        Report& operator & (const Result& rhs)
+        {
+            success = (success && rhs.success);
+            if (!rhs.success) messages.push_back(rhs.message);
+            return *this;
         }
 
         operator bool () const
@@ -296,15 +295,6 @@ export namespace test
 
 namespace detail
 {
-    template<typename T>
-    [[nodiscard]]
-    constexpr auto EqualImpl(const T& actual, const T& expected) -> bool
-    {
-        if constexpr (types::FloatingPoint<T>)
-            return math::AlmostEqual<T>(actual, expected);
-        return (actual == expected);
-    }
-
     template<typename F, typename Tuple = std::tuple<>>
     [[nodiscard]]
     constexpr auto ThrowsImpl(F&& func, Tuple&& argsTuple = {}) -> bool
@@ -337,71 +327,73 @@ namespace detail
 
 export namespace test
 {
-    // succeeds if actual value is equal to the expected value.
-    // for floats/doubles uses math::AlmostEqual function
+    // succeeds if the actual value is equal to the expected value
+    // works for floating point numbers as well
     template<typename T>
     [[nodiscard]]
-    constexpr auto Equal(const T& actual, const T& expected, SRC_LOC_CURR) -> Result
+    constexpr auto Equal(const T& actual, const T& expected, const std::source_location loc = std::source_location::current()) -> Result
     {
-        return detail::EqualImpl(actual, expected) ? SUCCESS : FAILURE(Equal);
+        const auto res = (types::Number<T>) ? math::NumericEqual(actual, expected) : (actual == expected);
+        return res ? Result(true) : Result(false, std::format("Equal [{}:{}]", actual, expected), loc);
     }
 
-    // succeeds if actual value is NOT equal to the expected value.
-    // for floats/doubles uses math::AlmostEqual function
+    // succeeds if actual value is NOT equal to the expected value
+    // works for floating point numbers as well
     template<typename T>
     [[nodiscard]]
-    constexpr auto NotEqual(const T& actual, const T& expected, SRC_LOC_CURR) -> Result
+    constexpr auto NotEqual(const T& actual, const T& expected, const std::source_location loc = std::source_location::current()) -> Result
     {
-        return detail::EqualImpl(actual, expected) ? FAILURE(NotEqual) : SUCCESS;
+        const auto res = (types::Number<T>) ? math::NumericEqual(actual, expected) : (actual == expected);
+        return res ? Result(false, std::format("NotEqual [{}:{}]", actual, expected), loc) : Result(true);
     }
 
     // succeeds if passed F (function, functor, lambda) throws any exception
     template<typename F, typename Tuple = std::tuple<>>
     [[nodiscard]]
-    constexpr auto Throws(F&& func, Tuple&& argsTuple = {}, SRC_LOC_CURR) -> Result
+    constexpr auto Throws(F&& func, Tuple&& argsTuple = {}, const std::source_location loc = std::source_location::current()) -> Result
     {
         return detail::ThrowsImpl(std::forward<F>(func), std::forward<Tuple>(argsTuple)) ?
-            SUCCESS : FAILURE(Throws);
+            Result(true) : Result(false, "Throws", loc);
     }
 
     // succeeds if passed F (function / functor / lambda / ...) does not throw any exception
     template<typename F, typename Tuple = std::tuple<>>
     [[nodiscard]]
-    constexpr auto DoesNotThrow(F&& func, Tuple&& argsTuple = {}, SRC_LOC_CURR) -> Result
+    constexpr auto DoesNotThrow(F&& func, Tuple&& argsTuple = {}, const std::source_location loc = std::source_location::current()) -> Result
     {
         return detail::ThrowsImpl(std::forward<F>(func), std::forward<Tuple>(argsTuple)) ?
-            FAILURE(DoesNotThrow) : SUCCESS;
+            Result(false, "DoesNotThrow", loc) : Result(true);
     }
 
     // succeeds if val is null
     template<typename T>
     [[nodiscard]]
-    constexpr auto Null(T val, SRC_LOC_CURR) -> Result
+    constexpr auto Null(T val, const std::source_location loc = std::source_location::current()) -> Result
     {
-        return detail::NullImpl(val) ? SUCCESS : FAILURE(Null);
+        return detail::NullImpl(val) ? Result(true) : Result(false, "Null", loc);
     }
 
     // succeeds if val is NOT null
     template<typename T>
     [[nodiscard]]
-    constexpr auto NotNull(T val, SRC_LOC_CURR) -> Result
+    constexpr auto NotNull(T val, const std::source_location loc = std::source_location::current()) -> Result
     {
-        return detail::NullImpl(val) ? FAILURE(NotNull) : SUCCESS;
+        return detail::NullImpl(val) ? Result(false, "NotNull", loc) : Result(true);
     }
 
     // succeeds if val is true
     template<typename T>
     [[nodiscard]]
-    constexpr auto True(T val, SRC_LOC_CURR) -> Result
+    constexpr auto True(T val, const std::source_location loc = std::source_location::current()) -> Result
     {
-        return detail::True(val) ? SUCCESS : FAILURE(True);
+        return detail::True(val) ? Result(true) : Result(false, "True", loc);
     }
 
     // succeeds if val is NOT true
     template<typename T>
     [[nodiscard]]
-    constexpr auto False(T val, SRC_LOC_CURR) -> Result
+    constexpr auto False(T val, const std::source_location loc = std::source_location::current()) -> Result
     {
-        return detail::True(val) ? FAILURE(False) : SUCCESS;
+        return detail::True(val) ? Result(false, "False", loc) : Result(true);
     }
 }
